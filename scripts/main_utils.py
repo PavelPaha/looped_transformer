@@ -45,6 +45,7 @@ def init_device(args):
     else:
         device = torch.device("cpu")
         torch.set_num_threads(4)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return device
 
 

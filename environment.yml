@@ -1,4 +1,4 @@
-name: loop_tf
+name: env1
 channels:
   - pytorch
   - nvidia
