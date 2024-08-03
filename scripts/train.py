@@ -58,7 +58,13 @@ def train_step(args, curriculum, model, xs, ys, optimizer, ctx, scaler):
             # list of [B, n], length K
             y_pred_arr = torch.cat(y_pred_list, dim=0)  # [B * K, n]
             y_star_arr = torch.cat([ys] * len(y_pred_list), dim=0)  # [B * K, n]
-            loss = (y_star_arr - y_pred_arr).square().mean()  # auto on both K and n (number of in context samples)
+
+            if y_star_arr.shape != y_pred_arr.shape:
+                min_len = min(y_star_arr.shape[1], y_pred_arr.shape[1])
+                y_star_arr = y_star_arr[:, :min_len]
+                y_pred_arr = y_pred_arr[:, :min_len]
+
+            loss = (y_star_arr - y_pred_arr).square().mean()
             y_pred = y_pred_list[-1]  # [B, n]
     if args.training.use_ctx:
         scaler.scale(loss).backward()
@@ -154,6 +160,13 @@ def main(args, device):
         # EVALUATION ======================================
         point_wise_tags = list(range(curriculum.n_points))  # [0, 1, 2, ..., n-1]
         if i % args.wandb.log_every_steps == 0:
+            if output.shape != ys.shape:
+                # Handle the dimension mismatch here (resize, padding, etc...)
+                # For example:
+                min_len = min(output.shape[1], ys.shape[1])
+                output = output[:, :min_len]
+                ys = ys[:, :min_len]
+
             point_wise_loss = (output - ys).square().mean(dim=0)  # [n,]
             if args.training.use_fixed_dataset:
                 # eval

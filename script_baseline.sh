@@ -2,14 +2,14 @@
 n_gpu=0
 
 # Linear Regression
-/usr/bin/python3 scripts/train.py --config configs/base.yaml \
-    --wandb.name "LR_baseline" \
-    --gpu.n_gpu $n_gpu
+#/usr/bin/python3 scripts/train.py --config configs/base_loop.yaml \
+#    --wandb.name "LR_baseline_loop2" \
+#    --gpu.n_gpu $n_gpu
 
 ## Sparse LR
-#python scripts/train.py --config configs/sparse_LR/base.yaml \
-#    --wandb.name "SparseLR_baseline" \
-#    --gpu.n_gpu $n_gpu
+/usr/bin/python3 scripts/train.py --config configs/sparse_LR/base_loop.yaml \
+    --wandb.name "SparseLR_baseline" \
+    --gpu.n_gpu $n_gpu
 #
 ## Decision Tree
 #python scripts/train.py --config configs/decision_tree/base.yaml \

@@ -39,7 +39,7 @@ def build_model(conf):
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, n_dims, n_positions, n_embd=128, n_layer=12, n_head=4, pred_type='regression'):
+    def __init__(self, n_dims, n_positions, n_embd=128, n_layer=12, n_head=4, n_last_tokens=10, pred_type='regression'):
 
         super(TransformerModel, self).__init__()
         self.freq = 2
@@ -52,8 +52,10 @@ class TransformerModel(nn.Module):
         configuration.dropout = 0.0
         configuration.bias = True
         configuration.dropout = 0.
+        configuration.n_last_tokens = n_last_tokens
         self.configuration = configuration
 
+        self.n_last_tokens = n_last_tokens
         self.n_positions = n_positions  # n = points in this setting
         self.n_dims = n_dims  # input dimension, d_in
         self.n_embd = n_embd  # d
@@ -153,10 +155,9 @@ class TransformerModelTying(TransformerModel):
 
 class TransformerModelLooped(TransformerModel):
     def __init__(
-            self, n_dims, n_positions, n_embd=128, n_layer=12, n_head=4, loop_func='z=f(x+z)', pred_type='regression'):
-
+            self, n_dims, n_positions, n_embd=128, n_layer=12, n_head=4, n_last_tokens=10, loop_func='z=f(x+z)', pred_type='regression'):
         super(TransformerModelLooped, self).__init__(
-            n_dims, n_positions, n_embd, n_layer, n_head, pred_type)
+            n_dims, n_positions, n_embd, n_layer, n_head, n_last_tokens, pred_type)
         self.loop_func = loop_func
 
     def f(self, output, embeds):
@@ -179,10 +180,11 @@ class TransformerModelLooped(TransformerModel):
         B, n, d_in = xs.shape
         zs = self._combine(xs, ys)  # [B, n, d_in], [B, n], [B, n] -> [B, 2n, d_in + 1]
         embeds = self._read_in(zs)  # [B, 2n, d_in + 1] -> [B, 2n, d]
+        embeds = embeds[:, -self.n_last_tokens:, :]  # Оставляем только n последних токенов с предыдущего шага
         if self.loop_func in ['z=f(x+z)']:
-            output = torch.zeros_like(embeds)  # also of shape [B, 2n, d]
+            output = torch.zeros_like(embeds)  # also of shape [B, n_last_tokens, d]
         elif self.loop_func in ['z=f(x*z)']:
-            output = torch.ones_like(embeds)  # also of shape [B, 2n, d]
+            output = torch.ones_like(embeds)  # also of shape [B, n_last_tokens, d]
         else:
             raise NotImplementedError("Currently we only support loop function z=f(x+z) or z=f(x*z).")
 

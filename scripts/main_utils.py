@@ -38,14 +38,15 @@ def gen_dataloader(task_sampler, num_sample, batch_size):
 
 
 def init_device(args):
-    cuda = args.gpu.cuda
-    gpu = args.gpu.n_gpu
-    if cuda:
+    if torch.cuda.is_available() and args.gpu.cuda:
+        gpu = args.gpu.n_gpu
         device = torch.device("cuda:{}".format(gpu))
+        print("Using CUDA device: CUDA:{}".format(gpu))
     else:
         device = torch.device("cpu")
-        torch.set_num_threads(4)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch.set_num_threads(16)
+        print("Using CPU device with 16 threads")
+
     return device
 
 
